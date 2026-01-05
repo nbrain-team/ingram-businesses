@@ -147,6 +147,9 @@ function openUploadModal(id, name) {
 function openCalendarModal(id, name) {
     currentCredentialId = id;
     document.getElementById('calendarCredentialName').textContent = name;
+    document.getElementById('appointmentName').value = '';
+    document.getElementById('appointmentCompany').value = '';
+    document.getElementById('appointmentEmail').value = '';
     document.getElementById('appointmentDate').value = '';
     document.getElementById('timeSlots').innerHTML = '<p style="text-align: center; color: #666;">Please select a date first</p>';
     selectedTimeSlot = null;
@@ -295,7 +298,37 @@ function selectTimeSlot(time, element) {
 
 // Handle appointment booking
 async function handleBooking() {
+    const name = document.getElementById('appointmentName').value.trim();
+    const companyName = document.getElementById('appointmentCompany').value.trim();
+    const email = document.getElementById('appointmentEmail').value.trim();
     const date = document.getElementById('appointmentDate').value;
+    
+    // Validate all required fields
+    if (!name) {
+        alert('Please enter your name.');
+        document.getElementById('appointmentName').focus();
+        return;
+    }
+    
+    if (!companyName) {
+        alert('Please enter your company name.');
+        document.getElementById('appointmentCompany').focus();
+        return;
+    }
+    
+    if (!email) {
+        alert('Please enter your email address.');
+        document.getElementById('appointmentEmail').focus();
+        return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address.');
+        document.getElementById('appointmentEmail').focus();
+        return;
+    }
     
     if (!date || !selectedTimeSlot) {
         alert('Please select a date and time.');
@@ -313,6 +346,9 @@ async function handleBooking() {
             },
             body: JSON.stringify({
                 credential_id: currentCredentialId,
+                name: name,
+                company_name: companyName,
+                email: email,
                 appointment_date: date,
                 appointment_time: selectedTimeSlot
             })
@@ -334,7 +370,7 @@ async function handleBooking() {
             day: 'numeric'
         });
         
-        alert(`✓ Appointment booked successfully!\n\nDate: ${displayDate}\nTime: ${displayTime} PST\n\nYou will receive a confirmation email shortly.`);
+        alert(`✓ Appointment booked successfully!\n\nName: ${name}\nCompany: ${companyName}\nEmail: ${email}\nDate: ${displayDate}\nTime: ${displayTime} PST\n\nYou will receive a confirmation email shortly.`);
         
         // Close modal
         closeModals();

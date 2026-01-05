@@ -79,6 +79,9 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS appointments (
         id SERIAL PRIMARY KEY,
         credential_id INTEGER REFERENCES credentials(id),
+        name VARCHAR(255) NOT NULL,
+        company_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
         appointment_date DATE NOT NULL,
         appointment_time TIME NOT NULL,
         status VARCHAR(50) DEFAULT 'scheduled',
@@ -107,64 +110,310 @@ async function seedCredentials() {
   try {
     const credentials = [
       {
-        name: 'Render Account Setup',
-        description: 'Create Render account and provide admin access',
-        instructions: `Step 1: Go to https://render.com and click "Get Started"
-Step 2: Sign up using your business email address
-Step 3: Once logged in, go to Account Settings (click your profile icon in top right)
-Step 4: Navigate to the "Members" or "Team" section
-Step 5: Add danny@nbrain.ai as an admin/owner to your account
-Step 6: Reply to this email confirming the invite was sent`
-      },
-      {
-        name: 'Pinecone Account Setup',
-        description: 'Create Pinecone account and provide API credentials',
-        instructions: `Step 1: Go to https://www.pinecone.io and click "Sign Up Free"
-Step 2: Create your account using your business email
-Step 3: Once logged in, you'll be taken to the dashboard
-Step 4: Click on "API Keys" in the left sidebar
-Step 5: Copy your API Key and Environment name
-Step 6: Create your first index by clicking "Create Index":
-   - Index Name: "ingram-documents" (or your preferred name)
-   - Dimensions: 1536
-   - Metric: cosine
-   - Click "Create Index"
-Step 7: Upload your API Key, Environment, and Index Name using the form below`
-      },
-      {
-        name: 'Database Access Credentials',
-        description: 'PostgreSQL database connection details',
-        instructions: `Please provide the following PostgreSQL database credentials:
-- Database Host
-- Database Port
-- Database Name
-- Database Username
-- Database Password
+        name: 'Paycom',
+        description: 'HRIS, Payroll, Employee Data',
+        instructions: `Step 1: Log into Paycom
+Go to www.paycomonline.net and sign in with your admin credentials.
 
-Format: postgresql://username:password@host:port/database`
+Step 2: Navigate to API Settings
+Click your name in the top right → Setup → Security → API Access
+(If you can't find it, look for "Integrations," "Developer Settings," or "API Management." Contact Paycom support at 1-800-580-4505 if needed.)
+
+Step 3: Create New API Key
+Click "Generate New API Key" or "Create API Credentials"
+Set the following permissions:
+- Read Access: Employee Data, Time & Attendance, Payroll (historical only)
+- NO Write/Edit Access
+
+Step 4: Name Your API Key
+Use a descriptive name: "nBrain AI Integration - Read Only - Jan 2026"
+
+Step 5: Copy & Save the API Key
+Paycom will display your API key ONCE. Copy it immediately and save it securely.
+⚠️ Important: You won't be able to see this key again. If you lose it, you'll need to generate a new one.
+
+What to Upload:
+- API Key (the long string of characters)
+- Your Paycom company ID (if prompted during setup)
+- Confirmation of read-only permissions enabled`
       },
       {
-        name: 'AWS S3 Credentials',
-        description: 'AWS S3 bucket access for document storage',
-        instructions: `Please provide the following AWS credentials:
-- AWS Access Key ID
-- AWS Secret Access Key
-- S3 Bucket Name
-- AWS Region
+        name: 'SAP',
+        description: 'ERP, Financial Data, Operations',
+        instructions: `Step 1: Contact Your SAP Basis Administrator
+SAP API access typically requires BASIS team involvement. Identify your SAP technical contact.
 
-These will be used for secure document storage and retrieval.`
+Step 2: Request OData Service Access
+Ask your SAP admin to create an OData service account with read-only access.
+Provide them with this information:
+- Purpose: AI Brain data integration (read-only)
+- Required Modules: FI (Finance), CO (Controlling), MM (Materials Management)
+- Access Type: OData API or REST API
+
+Step 3: Obtain Service Credentials
+Your SAP admin will provide:
+- API endpoint URL (e.g., https://your-sap-system.com/sap/opu/odata/...)
+- Service username
+- Service password or API key
+- Client number (if applicable)
+
+Step 4: Test the Connection
+Ask your SAP admin to verify the service is active and accessible.
+
+What to Upload:
+- OData service URL
+- Service account username
+- Service account password/API key
+- Client number (if applicable)
+- SAP system type (S/4HANA, ECC, Business One, etc.)
+
+💡 Alternative: If your SAP admin prefers, they can contact our technical team directly to discuss the integration approach.`
       },
       {
-        name: 'Email Service Configuration',
-        description: 'SMTP credentials for email notifications',
-        instructions: `Please provide email service credentials:
-- SMTP Host
-- SMTP Port
-- SMTP Username
-- SMTP Password
-- From Email Address
+        name: 'Fleetio',
+        description: 'Fleet Management, Maintenance Records',
+        instructions: `Step 1: Log into Fleetio
+Go to secure.fleetio.com and sign in with your admin account.
 
-This will enable automated notifications and reports.`
+Step 2: Navigate to API Settings
+Click Settings (gear icon) → API Keys
+Direct link: https://secure.fleetio.com/api_keys
+
+Step 3: Create New API Key
+Click "New API Key"
+Fill in the details:
+- Name: nBrain AI Integration
+- Permissions: Read Only
+- Scopes: Check "All" or select: Vehicles, Service Entries, Issues, Inspections, Fuel Entries
+
+Step 4: Generate & Copy the Key
+Click "Create API Key"
+Copy the API key that appears (it's a long string starting with sk_...)
+
+Step 5: Note Your Account ID
+While in Fleetio, note your Account ID (visible in the URL or under Settings)
+
+What to Upload:
+- API Key (starts with sk_...)
+- Fleetio Account ID`
+      },
+      {
+        name: 'Motive (formerly KeepTruckin)',
+        description: 'GPS Tracking, Telematics, Pre-Trip Inspections',
+        instructions: `Step 1: Log into Motive Dashboard
+Go to gomotive.com or your custom Motive URL and sign in with admin credentials.
+
+Step 2: Access Developer Settings
+Click your profile icon → Settings → Developer (or Integrations)
+💡 Note: The exact menu may vary. Look for "API Access," "Developer Tools," or "App Marketplace."
+
+Step 3: Generate API Token
+Click "Generate New API Token" or "Create API Key"
+Configure:
+- Name: nBrain AI Integration
+- Permissions: Read Only (no write access)
+- Access: Vehicles, Drivers, DVIR (inspections), Location, HOS
+
+Step 4: Save the Access Token
+Copy the access token immediately (you won't be able to see it again)
+
+Step 5: Note Your Company ID
+Find your Motive Company ID in Settings → Company Info
+
+What to Upload:
+- API Access Token
+- Motive Company ID
+- Confirmation of read-only permissions`
+      },
+      {
+        name: 'KPA Flex',
+        description: 'Safety Data, Compliance, Incident Management',
+        instructions: `Step 1: Contact KPA Support
+KPA Flex API access typically requires assistance from KPA support.
+Call KPA Support: 1-866-356-1735
+Or email: support@kpa.io
+
+Step 2: Request API Access
+Tell KPA Support:
+- "We need API access for a third-party AI integration"
+- "Read-only access to safety data, incidents, inspections, and training records"
+- "We're integrating with nBrain AI Brain platform"
+
+Step 3: Obtain API Credentials
+KPA will provide you with:
+- API endpoint URL
+- API key or OAuth credentials
+- Documentation link
+
+Step 4: Verify Permissions
+Confirm with KPA that the API key has read-only access to all safety modules you use.
+
+What to Upload:
+- API endpoint URL
+- API key or OAuth credentials
+- Any documentation KPA provides
+
+💡 Alternative: KPA may prefer to work directly with our technical team. You can introduce them via email.`
+      },
+      {
+        name: 'Monday.com',
+        description: 'Project Management, Legal Tracking, Bids',
+        instructions: `Step 1: Log into Monday.com
+Go to monday.com and sign in with admin credentials.
+
+Step 2: Navigate to Developer Settings
+Click your profile picture → Admin → Integrations & API
+Direct link: https://auth.monday.com/developers
+
+Step 3: Generate Personal API Token
+Scroll to "Personal API Tokens"
+Click "Generate" or "+ New Token"
+Name it: nBrain AI Integration
+
+Step 4: Copy the Token
+Monday.com will display your API token. Copy it immediately.
+⚠️ Important: This token grants access to all boards the user can see. Ensure the admin generating this has appropriate permissions.
+
+Step 5: Note Your Workspace
+Make note of which Monday.com workspace(s) contain the data we need to access (bids, legal matters, etc.)
+
+What to Upload:
+- Personal API Token
+- List of workspace/board names we should access
+- Monday.com account email`
+      },
+      {
+        name: 'Microsoft 365 / Outlook',
+        description: 'Email, Calendar, OneDrive, Teams',
+        instructions: `Step 1: Access Microsoft Admin Center
+Go to admin.microsoft.com and sign in with global admin credentials.
+
+Step 2: Register an App
+Navigate to: Azure Active Directory → App Registrations → New Registration
+Direct link: https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps
+Fill in:
+- Name: nBrain AI Integration
+- Supported account types: Accounts in this organizational directory only
+- Redirect URI: Leave blank for now
+
+Step 3: Generate Client Secret
+In your new app registration:
+Go to Certificates & secrets → New client secret
+Description: nBrain Integration Secret
+Expiration: 24 months
+Copy the secret value immediately!
+
+Step 4: Note Application Details
+From the app's Overview page, copy:
+- Application (client) ID
+- Directory (tenant) ID
+
+Step 5: Set API Permissions
+Go to API permissions → Add a permission → Microsoft Graph
+Add these Application permissions (read-only):
+- Mail.Read (read emails)
+- Calendars.Read (read calendars)
+- Files.Read.All (read OneDrive/SharePoint)
+- User.Read.All (read user info)
+Click "Grant admin consent for [your organization]"
+
+What to Upload:
+- Application (client) ID
+- Directory (tenant) ID
+- Client secret value
+- Confirmation that admin consent was granted
+
+💡 Complex Setup? This one is more technical. If you need assistance, we can schedule a 15-minute screen share to walk through it together.`
+      },
+      {
+        name: 'Ramp',
+        description: 'Credit Card Management, Expense Tracking',
+        instructions: `Step 1: Log into Ramp
+Go to app.ramp.com and sign in with admin credentials.
+
+Step 2: Navigate to Developer Settings
+Click Settings (gear icon) → Developer
+Direct link: https://app.ramp.com/settings/developer
+
+Step 3: Create API Key
+Click "Create new key"
+Name: nBrain AI Integration - Read Only
+Permissions: Read-only (uncheck any write permissions)
+
+Step 4: Copy the Key
+Ramp will show your API key once. Copy it and save securely.
+
+What to Upload:
+- Ramp API Key
+- Ramp company/organization name`
+      },
+      {
+        name: 'Box',
+        description: 'Document Storage, Document Signing',
+        instructions: `Step 1: Log into Box Admin Console
+Go to app.box.com/master/settings and sign in with admin account.
+
+Step 2: Navigate to Apps
+Click Admin Console → Apps → Custom Apps
+Direct link: https://app.box.com/master/custom-apps
+
+Step 3: Create New Custom App
+Click "+ Add App" → "Create a Custom App"
+Choose "Server Authentication (with JWT)" or "OAuth 2.0"
+App Name: nBrain AI Integration
+
+Step 4: Configure Permissions
+Under Configuration:
+- Application Scopes: Read all files and folders
+- Do NOT enable write/delete permissions
+
+Step 5: Generate & Download Credentials
+Click "Generate a Public/Private Keypair"
+A JSON file will download automatically - save this securely!
+Also copy the Client ID and Client Secret
+
+Step 6: Authorize the App
+Go back to Admin Console → Apps
+Find your new app and click "Authorize"
+
+What to Upload:
+- Downloaded JSON configuration file (send securely!)
+- Client ID
+- Client Secret`
+      },
+      {
+        name: 'Zoom',
+        description: 'Meeting Recordings & Transcripts',
+        instructions: `Step 1: Access Zoom App Marketplace
+Go to marketplace.zoom.us and sign in with admin credentials.
+
+Step 2: Create Server-to-Server OAuth App
+Click "Develop" → "Build App"
+Choose "Server-to-Server OAuth"
+App Name: nBrain AI Integration
+
+Step 3: Configure App Information
+Fill in basic information (company name, developer contact, etc.)
+
+Step 4: Add Scopes
+Under Scopes, add these permissions:
+- meeting:read:admin
+- recording:read:admin
+- user:read:admin
+
+Step 5: Get Credentials
+Navigate to Credentials tab and copy:
+- Account ID
+- Client ID
+- Client Secret
+
+Step 6: Activate the App
+Click "Continue" and then "Activate"
+
+What to Upload:
+- Account ID
+- Client ID
+- Client Secret`
       }
     ];
 
@@ -305,7 +554,12 @@ app.get('/api/appointments/available', async (req, res) => {
 app.post('/api/appointments', async (req, res) => {
   const client = await pool.connect();
   try {
-    const { credential_id, appointment_date, appointment_time } = req.body;
+    const { credential_id, name, company_name, email, appointment_date, appointment_time } = req.body;
+    
+    // Validate required fields
+    if (!name || !company_name || !email) {
+      return res.status(400).json({ error: 'Name, company name, and email are required' });
+    }
     
     // Check if slot is still available
     const existing = await client.query(
@@ -320,10 +574,10 @@ app.post('/api/appointments', async (req, res) => {
     
     // Book the appointment
     const result = await client.query(
-      `INSERT INTO appointments (credential_id, appointment_date, appointment_time, status)
-       VALUES ($1, $2, $3, 'scheduled')
+      `INSERT INTO appointments (credential_id, name, company_name, email, appointment_date, appointment_time, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'scheduled')
        RETURNING *`,
-      [credential_id, appointment_date, appointment_time]
+      [credential_id, name, company_name, email, appointment_date, appointment_time]
     );
     
     res.json({
