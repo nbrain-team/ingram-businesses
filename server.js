@@ -79,15 +79,27 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS appointments (
         id SERIAL PRIMARY KEY,
         credential_id INTEGER REFERENCES credentials(id),
-        name VARCHAR(255) NOT NULL,
-        company_name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
+        company_name VARCHAR(255),
+        email VARCHAR(255),
         appointment_date DATE NOT NULL,
         appointment_time TIME NOT NULL,
         status VARCHAR(50) DEFAULT 'scheduled',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    
+    // Migrate existing appointments table if columns don't exist
+    try {
+      await client.query(`
+        ALTER TABLE appointments 
+        ADD COLUMN IF NOT EXISTS name VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS company_name VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS email VARCHAR(255)
+      `);
+    } catch (error) {
+      console.log('Migration may have already run or columns exist:', error.message);
+    }
 
     // Create index for faster queries
     await client.query(`
@@ -108,6 +120,11 @@ async function initializeDatabase() {
 async function seedCredentials() {
   const client = await pool.connect();
   try {
+    // Remove any old credentials first
+    await client.query('DELETE FROM credentials WHERE name IN ($1, $2, $3, $4, $5)', 
+      ['Render Account Setup', 'Pinecone Account Setup', 'Database Access Credentials', 'AWS S3 Credentials', 'Email Service Configuration']
+    );
+    
     const credentials = [
       {
         name: 'Paycom',
@@ -557,8 +574,20 @@ app.post('/api/appointments', async (req, res) => {
     const { credential_id, name, company_name, email, appointment_date, appointment_time } = req.body;
     
     // Validate required fields
-    if (!name || !company_name || !email) {
-      return res.status(400).json({ error: 'Name, company name, and email are required' });
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+    if (!company_name || !company_name.trim()) {
+      return res.status(400).json({ error: 'Company name is required' });
+    }
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    if (!appointment_date) {
+      return res.status(400).json({ error: 'Appointment date is required' });
+    }
+    if (!appointment_time) {
+      return res.status(400).json({ error: 'Appointment time is required' });
     }
     
     // Check if slot is still available
@@ -577,7 +606,7 @@ app.post('/api/appointments', async (req, res) => {
       `INSERT INTO appointments (credential_id, name, company_name, email, appointment_date, appointment_time, status)
        VALUES ($1, $2, $3, $4, $5, $6, 'scheduled')
        RETURNING *`,
-      [credential_id, name, company_name, email, appointment_date, appointment_time]
+      [credential_id, name.trim(), company_name.trim(), email.trim(), appointment_date, appointment_time]
     );
     
     res.json({
@@ -587,7 +616,7 @@ app.post('/api/appointments', async (req, res) => {
     });
   } catch (error) {
     console.error('Error booking appointment:', error);
-    res.status(500).json({ error: 'Failed to book appointment' });
+    res.status(500).json({ error: error.message || 'Failed to book appointment' });
   } finally {
     client.release();
   }
