@@ -652,8 +652,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Manual cleanup endpoint - call this once to remove old credentials
-app.post('/api/cleanup-old-credentials', async (req, res) => {
+// Manual cleanup endpoint - visit this URL in browser to remove old credentials
+app.get('/api/cleanup-old-credentials', async (req, res) => {
   const client = await pool.connect();
   try {
     const result = await client.query(`
@@ -668,14 +668,56 @@ app.post('/api/cleanup-old-credentials', async (req, res) => {
       RETURNING id, name
     `);
     
-    res.json({
-      success: true,
-      message: 'Old credentials removed',
-      removed: result.rows
-    });
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Cleanup Complete</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; background: #f3f4f6; }
+          .success { background: #d1fae5; border: 2px solid #059669; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; }
+          h1 { color: #059669; }
+          ul { margin: 10px 0; }
+          a { color: #1a365d; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="success">
+          <h1>✓ Old Credentials Removed!</h1>
+          <p><strong>${result.rows.length}</strong> old credentials have been deleted from the database.</p>
+          ${result.rows.length > 0 ? `
+            <p>Removed:</p>
+            <ul>
+              ${result.rows.map(r => `<li>${r.name}</li>`).join('')}
+            </ul>
+          ` : '<p>No old credentials found (already cleaned up).</p>'}
+          <p><a href="/">← Return to Credential Portal</a></p>
+        </div>
+      </body>
+      </html>
+    `);
   } catch (error) {
     console.error('Error cleaning up credentials:', error);
-    res.status(500).json({ error: 'Failed to cleanup credentials' });
+    res.status(500).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Cleanup Error</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; background: #f3f4f6; }
+          .error { background: #fee2e2; border: 2px solid #dc2626; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; }
+          h1 { color: #dc2626; }
+        </style>
+      </head>
+      <body>
+        <div class="error">
+          <h1>✗ Cleanup Failed</h1>
+          <p>Error: ${error.message}</p>
+          <p><a href="/">← Return to Credential Portal</a></p>
+        </div>
+      </body>
+      </html>
+    `);
   } finally {
     client.release();
   }
