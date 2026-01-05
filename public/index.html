@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingram Businesses - Credential Setup Portal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Ingram Businesses</h1>
+        <p>Credential Setup Portal</p>
+        <div class="date-badge">Setup Your Platform Access</div>
+    </div>
+
+    <div class="container">
+        <div class="summary-section">
+            <h2>Welcome to Your Setup Portal</h2>
+            <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1rem;">
+                Please complete the following credential setups to get your AI platform configured. 
+                Click on each card to expand and follow the instructions. Once completed, upload your credentials or book a call if you need assistance.
+            </p>
+        </div>
+
+        <div id="credentials-container" class="credentials-grid">
+            <!-- Credentials will be loaded here dynamically -->
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Upload Credential</h2>
+            <p id="modalCredentialName" style="color: #666; margin-bottom: 1.5rem;"></p>
+            
+            <div class="upload-options">
+                <div class="upload-option">
+                    <h3>Option 1: Paste Text</h3>
+                    <textarea id="credentialText" placeholder="Paste your credentials here (e.g., API keys, connection strings, etc.)" rows="6"></textarea>
+                </div>
+                
+                <div class="upload-divider">OR</div>
+                
+                <div class="upload-option">
+                    <h3>Option 2: Upload File</h3>
+                    <input type="file" id="credentialFile" accept=".pdf,.txt,.jpg,.jpeg,.png">
+                    <p class="file-hint">Accepted formats: PDF, TXT, JPG, PNG (Max 10MB)</p>
+                </div>
+            </div>
+            
+            <button id="uploadBtn" class="btn btn-primary">Upload Credential</button>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div id="calendarModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Book a Call with Our Team</h2>
+            <p id="calendarCredentialName" style="color: #666; margin-bottom: 1.5rem;"></p>
+            
+            <div class="calendar-container">
+                <label for="appointmentDate">Select Date:</label>
+                <input type="date" id="appointmentDate" min="">
+                
+                <div id="timeSlots" class="time-slots">
+                    <!-- Time slots will be loaded here -->
+                </div>
+            </div>
+            
+            <button id="bookBtn" class="btn btn-primary" disabled>Book Appointment</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p style="font-size: 1.1rem; margin-bottom: 0.5rem;"><strong>Ingram Businesses AI Platform</strong></p>
+        <p style="opacity: 0.8;">Need help? Contact danny@nbrain.ai</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

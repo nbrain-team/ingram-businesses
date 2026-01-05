@@ -1,0 +1,68 @@
+# Ingram Credential Portal - Environment Variables Template
+# Copy this to .env for local development
+# For Render deployment, set these in the Render Dashboard
+
+# ==============================================
+# DATABASE CONFIGURATION
+# ==============================================
+# PostgreSQL connection string
+# Format: postgresql://username:password@host:port/database
+# Example: postgresql://admin:password123@localhost:5432/ingram_credentials
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# ==============================================
+# SERVER CONFIGURATION
+# ==============================================
+# Port the server will run on
+# Local development: 3000
+# Render production: 10000 (default)
+PORT=3000
+
+# Environment mode
+# Options: development, production
+NODE_ENV=development
+
+# ==============================================
+# FILE UPLOAD CONFIGURATION
+# ==============================================
+# Directory where uploaded files will be stored
+# Relative to project root
+UPLOAD_DIR=./uploads
+
+# Maximum file size in bytes
+# 10485760 = 10MB
+# 5242880 = 5MB
+# 20971520 = 20MB
+MAX_FILE_SIZE=10485760
+
+# ==============================================
+# OPTIONAL: FUTURE ENHANCEMENTS
+# ==============================================
+# Uncomment and configure when needed
+
+# Email notifications (future feature)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASS=your-app-password
+# FROM_EMAIL=noreply@ingrambusinesses.com
+
+# AWS S3 for file storage (future feature)
+# AWS_ACCESS_KEY_ID=your-access-key
+# AWS_SECRET_ACCESS_KEY=your-secret-key
+# AWS_REGION=us-east-1
+# S3_BUCKET_NAME=ingram-credentials
+
+# JWT for authentication (future feature)
+# JWT_SECRET=your-secret-key-here
+# JWT_EXPIRES_IN=7d
+
+# ==============================================
+# NOTES
+# ==============================================
+# - Never commit .env files to version control
+# - Use strong passwords for production databases
+# - Rotate credentials regularly
+# - For Render deployment, DATABASE_URL is auto-populated
+# - All uploaded credentials will be accessible via database queries
+

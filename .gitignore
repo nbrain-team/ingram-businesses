@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Uploads directory
+uploads/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build files
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# Exclude document directories (not needed for platform)
+AA_Ingram Property Docs/
+Ingram Access and Passwords/
+Ingram Transcripts and Docs/
+
+# Exclude old HTML analysis files (not needed for platform)
+Ingram_Complete_Document_Analysis.html
+Ingram_Software_Systems_Analysis.html
+Ingram_Transcripts_Document_Analysis.html
+ingram-businesses-ai-brain-proposal.html
+ingram-businesses-contract.html
+ingram-businesses-kickoff.html
+IPS_API_Access_Guide.html
+
