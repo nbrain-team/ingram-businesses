@@ -120,20 +120,6 @@ async function initializeDatabase() {
 async function seedCredentials() {
   const client = await pool.connect();
   try {
-    // First, delete any old/unwanted credentials
-    await client.query(`
-      DELETE FROM credentials 
-      WHERE name IN (
-        'Render Account Setup', 
-        'Pinecone Account Setup', 
-        'Database Access Credentials', 
-        'AWS S3 Credentials', 
-        'Email Service Configuration'
-      )
-    `);
-    
-    console.log('Removed old credentials');
-    
     const credentials = [
       {
         name: 'Paycom',
@@ -728,10 +714,39 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Cleanup old credentials that should no longer appear
+async function cleanupOldCredentials() {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      DELETE FROM credentials 
+      WHERE name IN (
+        'Render Account Setup', 
+        'Pinecone Account Setup', 
+        'Database Access Credentials', 
+        'AWS S3 Credentials', 
+        'Email Service Configuration'
+      )
+      RETURNING id, name
+    `);
+    
+    if (result.rows.length > 0) {
+      console.log(`Cleaned up ${result.rows.length} old credentials:`, result.rows.map(r => r.name));
+    } else {
+      console.log('No old credentials to clean up');
+    }
+  } catch (error) {
+    console.error('Error cleaning up old credentials:', error);
+  } finally {
+    client.release();
+  }
+}
+
 // Initialize and start server
 async function startServer() {
   try {
     await initializeDatabase();
+    await cleanupOldCredentials(); // Run cleanup before seeding
     await seedCredentials();
     
     app.listen(PORT, () => {
