@@ -120,10 +120,19 @@ async function initializeDatabase() {
 async function seedCredentials() {
   const client = await pool.connect();
   try {
-    // Remove any old credentials first
-    await client.query('DELETE FROM credentials WHERE name IN ($1, $2, $3, $4, $5)', 
-      ['Render Account Setup', 'Pinecone Account Setup', 'Database Access Credentials', 'AWS S3 Credentials', 'Email Service Configuration']
-    );
+    // First, delete any old/unwanted credentials
+    await client.query(`
+      DELETE FROM credentials 
+      WHERE name IN (
+        'Render Account Setup', 
+        'Pinecone Account Setup', 
+        'Database Access Credentials', 
+        'AWS S3 Credentials', 
+        'Email Service Configuration'
+      )
+    `);
+    
+    console.log('Removed old credentials');
     
     const credentials = [
       {
@@ -641,6 +650,35 @@ app.get('/api/appointments', async (req, res) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Manual cleanup endpoint - call this once to remove old credentials
+app.post('/api/cleanup-old-credentials', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      DELETE FROM credentials 
+      WHERE name IN (
+        'Render Account Setup', 
+        'Pinecone Account Setup', 
+        'Database Access Credentials', 
+        'AWS S3 Credentials', 
+        'Email Service Configuration'
+      )
+      RETURNING id, name
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Old credentials removed',
+      removed: result.rows
+    });
+  } catch (error) {
+    console.error('Error cleaning up credentials:', error);
+    res.status(500).json({ error: 'Failed to cleanup credentials' });
+  } finally {
+    client.release();
+  }
 });
 
 // Serve the main HTML file
