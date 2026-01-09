@@ -861,6 +861,46 @@ app.get('/api/admin-report', async (req, res) => {
         </div>
 
         <div class="section">
+          <h2>💰 QuickBooks Access (Received Offline)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Company Name</th>
+                <th>QuickBooks Company ID</th>
+                <th>Status</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Tea It Up Operating, LLC</strong></td>
+                <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9130 3550 7031 9306</code></td>
+                <td><span class="badge completed">Completed</span></td>
+                <td><span style="color: #6b7280;">Received Offline</span></td>
+              </tr>
+              <tr>
+                <td><strong>Tea It Up El Paso</strong></td>
+                <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9130 3526 4194 7426</code></td>
+                <td><span class="badge completed">Completed</span></td>
+                <td><span style="color: #6b7280;">Received Offline</span></td>
+              </tr>
+              <tr>
+                <td><strong>Ingram Properties</strong></td>
+                <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9341 4531 5774 5001</code></td>
+                <td><span class="badge completed">Completed</span></td>
+                <td><span style="color: #6b7280;">Received Offline</span></td>
+              </tr>
+              <tr>
+                <td><strong>Patriot Strategy and Development, LLC</strong></td>
+                <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9341 4552 4997 6050</code></td>
+                <td><span class="badge completed">Completed</span></td>
+                <td><span style="color: #6b7280;">Received Offline</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section">
           <h2>📋 Credentials Status</h2>
           ${credentials.rows.length > 0 ? `
             <table>
