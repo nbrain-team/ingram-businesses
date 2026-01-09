@@ -638,6 +638,315 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Admin report endpoint - view all submissions and appointments
+app.get('/api/admin-report', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    // Get all credentials with their status
+    const credentials = await client.query(`
+      SELECT id, name, description, status, 
+             CASE 
+               WHEN credential_data IS NOT NULL THEN LEFT(credential_data, 100) || '...'
+               ELSE NULL 
+             END as credential_preview,
+             file_path, file_type, updated_at
+      FROM credentials 
+      ORDER BY 
+        CASE status 
+          WHEN 'completed' THEN 1 
+          WHEN 'needed' THEN 2 
+        END,
+        name
+    `);
+    
+    // Get all appointments with contact info
+    const appointments = await client.query(`
+      SELECT a.id, a.name, a.company_name, a.email, 
+             a.appointment_date, a.appointment_time, a.status,
+             c.name as credential_name, a.created_at
+      FROM appointments a
+      LEFT JOIN credentials c ON a.credential_id = c.id
+      ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    `);
+    
+    // Count statistics
+    const stats = {
+      total_credentials: credentials.rows.length,
+      completed_credentials: credentials.rows.filter(c => c.status === 'completed').length,
+      needed_credentials: credentials.rows.filter(c => c.status === 'needed').length,
+      total_appointments: appointments.rows.length,
+      upcoming_appointments: appointments.rows.filter(a => new Date(a.appointment_date) >= new Date()).length
+    };
+    
+    // Generate HTML report
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>IPS Credential Portal - Admin Report</title>
+        <style>
+          :root {
+            --color-primary: #1a365d;
+            --color-success: #059669;
+            --color-warning: #d69e2e;
+            --color-needed: #dc2626;
+            --color-bg: #F3F4F6;
+            --color-surface: #FFFFFF;
+            --color-border: #D1D5DB;
+          }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            padding: 2rem;
+            line-height: 1.6;
+          }
+          .header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #2563eb 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+          }
+          .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+          .header p { opacity: 0.9; }
+          .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+          }
+          .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--color-primary);
+          }
+          .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 0.25rem;
+          }
+          .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          }
+          .section h2 {
+            color: var(--color-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 0.5rem;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+          }
+          th {
+            background: var(--color-primary);
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+          }
+          td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 0.9rem;
+          }
+          tr:hover { background: #f9fafb; }
+          .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+          .badge.completed {
+            background: #d1fae5;
+            color: var(--color-success);
+          }
+          .badge.needed {
+            background: #fee2e2;
+            color: var(--color-needed);
+          }
+          .badge.scheduled {
+            background: #dbeafe;
+            color: #2563eb;
+          }
+          .no-data {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-style: italic;
+          }
+          .credential-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #6b7280;
+          }
+          .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--color-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+          }
+          .back-link:hover {
+            background: #2563eb;
+          }
+          .timestamp {
+            color: #6b7280;
+            font-size: 0.85rem;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>📊 IPS Credential Portal - Admin Report</h1>
+          <p>Generated: ${new Date().toLocaleString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">${stats.total_credentials}</div>
+            <div class="stat-label">Total Credentials</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${stats.completed_credentials}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${stats.needed_credentials}</div>
+            <div class="stat-label">Still Needed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${stats.total_appointments}</div>
+            <div class="stat-label">Total Appointments</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">${stats.upcoming_appointments}</div>
+            <div class="stat-label">Upcoming</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>📋 Credentials Status</h2>
+          ${credentials.rows.length > 0 ? `
+            <table>
+              <thead>
+                <tr>
+                  <th>Credential Name</th>
+                  <th>Status</th>
+                  <th>Data Preview</th>
+                  <th>File</th>
+                  <th>Last Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${credentials.rows.map(c => `
+                  <tr>
+                    <td><strong>${c.name}</strong><br><small style="color: #6b7280;">${c.description || ''}</small></td>
+                    <td><span class="badge ${c.status}">${c.status}</span></td>
+                    <td><div class="credential-preview">${c.credential_preview || '-'}</div></td>
+                    <td>${c.file_path ? `<span style="color: var(--color-success);">✓ ${c.file_type}</span>` : '-'}</td>
+                    <td class="timestamp">${c.updated_at ? new Date(c.updated_at).toLocaleDateString() : '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : '<div class="no-data">No credentials found</div>'}
+        </div>
+
+        <div class="section">
+          <h2>📅 Appointments Booked</h2>
+          ${appointments.rows.length > 0 ? `
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Company</th>
+                  <th>Email</th>
+                  <th>Credential</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${appointments.rows.map(a => `
+                  <tr>
+                    <td><strong>${a.name || 'N/A'}</strong></td>
+                    <td>${a.company_name || 'N/A'}</td>
+                    <td><a href="mailto:${a.email || ''}">${a.email || 'N/A'}</a></td>
+                    <td>${a.credential_name || 'Unknown'}</td>
+                    <td>
+                      ${a.appointment_date ? new Date(a.appointment_date).toLocaleDateString('en-US', { 
+                        weekday: 'short',
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
+                      }) : 'N/A'}
+                      <br>
+                      <span style="color: #6b7280;">${a.appointment_time || 'N/A'} PST</span>
+                    </td>
+                    <td><span class="badge ${a.status}">${a.status}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : '<div class="no-data">No appointments booked yet</div>'}
+        </div>
+
+        <a href="/" class="back-link">← Back to Portal</a>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Error generating report:', error);
+    res.status(500).send(`
+      <html>
+        <body style="font-family: Arial; padding: 40px; background: #fee2e2;">
+          <h1 style="color: #dc2626;">Error Generating Report</h1>
+          <p>Error: ${error.message}</p>
+          <a href="/">← Back to Portal</a>
+        </body>
+      </html>
+    `);
+  } finally {
+    client.release();
+  }
+});
+
 // Manual cleanup endpoint - visit this URL in browser to remove old credentials
 app.get('/api/cleanup-old-credentials', async (req, res) => {
   const client = await pool.connect();
