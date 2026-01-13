@@ -987,6 +987,88 @@ app.get('/api/admin-report', async (req, res) => {
   }
 });
 
+// Export credentials as text file
+app.get('/api/export-credentials', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT name, description, status, credential_data, file_path, file_type, 
+             created_at, updated_at
+      FROM credentials 
+      WHERE status = 'completed'
+      ORDER BY name
+    `);
+    
+    if (result.rows.length === 0) {
+      res.setHeader('Content-Type', 'text/plain');
+      res.send('No completed credentials found yet.\n\nVisit the portal to submit credentials.');
+      return;
+    }
+    
+    // Generate text report
+    let report = '';
+    report += '═══════════════════════════════════════════════════════════════\n';
+    report += '  IPS CREDENTIAL PORTAL - SUBMITTED CREDENTIALS REPORT\n';
+    report += '═══════════════════════════════════════════════════════════════\n';
+    report += `Generated: ${new Date().toLocaleString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    })}\n`;
+    report += `Total Completed Credentials: ${result.rows.length}\n`;
+    report += '═══════════════════════════════════════════════════════════════\n\n';
+    
+    result.rows.forEach((cred, index) => {
+      report += `\n`;
+      report += `[${ index + 1}] ${cred.name.toUpperCase()}\n`;
+      report += `${'─'.repeat(60)}\n`;
+      report += `Description: ${cred.description || 'N/A'}\n`;
+      report += `Status: ${cred.status.toUpperCase()}\n`;
+      report += `Submitted: ${new Date(cred.updated_at).toLocaleString('en-US')}\n`;
+      
+      if (cred.file_path) {
+        report += `\nFile Upload:\n`;
+        report += `  • File Type: ${cred.file_type}\n`;
+        report += `  • File Path: ${cred.file_path}\n`;
+        report += `  • Note: File stored on server, download from uploads directory\n`;
+      }
+      
+      if (cred.credential_data) {
+        report += `\nCredential Data:\n`;
+        report += `${'-'.repeat(60)}\n`;
+        report += `${cred.credential_data}\n`;
+        report += `${'-'.repeat(60)}\n`;
+      }
+      
+      report += `\n`;
+    });
+    
+    report += '\n═══════════════════════════════════════════════════════════════\n';
+    report += '  END OF REPORT\n';
+    report += '═══════════════════════════════════════════════════════════════\n';
+    report += '\nIMPORTANT NOTES:\n';
+    report += '• Keep this file secure - it contains sensitive credentials\n';
+    report += '• Files uploaded are stored in the uploads/ directory on the server\n';
+    report += '• Access uploaded files via Render Shell or download from server\n';
+    report += '• For support: danny@nbrain.ai\n';
+    
+    // Set headers for file download
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="IPS_Credentials_Export_${new Date().toISOString().split('T')[0]}.txt"`);
+    res.send(report);
+    
+  } catch (error) {
+    console.error('Error exporting credentials:', error);
+    res.status(500).send(`Error exporting credentials: ${error.message}`);
+  } finally {
+    client.release();
+  }
+});
+
 // Manual cleanup endpoint - visit this URL in browser to remove old credentials
 app.get('/api/cleanup-old-credentials', async (req, res) => {
   const client = await pool.connect();
