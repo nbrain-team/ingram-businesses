@@ -670,10 +670,15 @@ app.get('/api/admin-report', async (req, res) => {
     `);
     
     // Count statistics
+    const portalCompleted = credentials.rows.filter(c => c.status === 'completed').length;
+    const offlineCompleted = 9; // 4 QuickBooks + 1 Square + 4 from portal = 9 total completed
+    
     const stats = {
       total_credentials: credentials.rows.length,
-      completed_credentials: credentials.rows.filter(c => c.status === 'completed').length,
+      completed_credentials: portalCompleted,
       needed_credentials: credentials.rows.filter(c => c.status === 'needed').length,
+      total_completed_all: portalCompleted + offlineCompleted,
+      pending_external: 2, // Google + SmartSuite from PDS
       total_appointments: appointments.rows.length,
       upcoming_appointments: appointments.rows.filter(a => new Date(a.appointment_date) >= new Date()).length
     };
@@ -840,35 +845,40 @@ app.get('/api/admin-report', async (req, res) => {
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-number">${stats.total_credentials}</div>
-            <div class="stat-label">Total Credentials</div>
+            <div class="stat-label">Portal Credentials</div>
+          </div>
+          <div class="stat-card" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+            <div class="stat-number" style="color: white;">${stats.total_completed_all}</div>
+            <div class="stat-label" style="color: white; opacity: 0.95;">Total Completed</div>
           </div>
           <div class="stat-card">
             <div class="stat-number">${stats.completed_credentials}</div>
-            <div class="stat-label">Completed</div>
+            <div class="stat-label">Via Portal</div>
           </div>
           <div class="stat-card">
             <div class="stat-number">${stats.needed_credentials}</div>
             <div class="stat-label">Still Needed</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-number">${stats.total_appointments}</div>
-            <div class="stat-label">Total Appointments</div>
+          <div class="stat-card" style="background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);">
+            <div class="stat-number" style="color: white;">${stats.pending_external}</div>
+            <div class="stat-label" style="color: white; opacity: 0.95;">Pending (PDS)</div>
           </div>
           <div class="stat-card">
-            <div class="stat-number">${stats.upcoming_appointments}</div>
-            <div class="stat-label">Upcoming</div>
+            <div class="stat-number">${stats.total_appointments}</div>
+            <div class="stat-label">Appointments</div>
           </div>
         </div>
 
         <div class="section">
-          <h2>💰 QuickBooks Access (Received Offline)</h2>
+          <h2>✅ Credentials Received (Outside Portal)</h2>
+          
+          <h3 style="color: var(--color-primary); margin-top: 1.5rem; margin-bottom: 1rem; font-size: 1.2rem;">💰 QuickBooks Access</h3>
           <table>
             <thead>
               <tr>
                 <th>Company Name</th>
                 <th>QuickBooks Company ID</th>
                 <th>Status</th>
-                <th>Source</th>
               </tr>
             </thead>
             <tbody>
@@ -876,25 +886,62 @@ app.get('/api/admin-report', async (req, res) => {
                 <td><strong>Tea It Up Operating, LLC</strong></td>
                 <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9130 3550 7031 9306</code></td>
                 <td><span class="badge completed">Completed</span></td>
-                <td><span style="color: #6b7280;">Received Offline</span></td>
               </tr>
               <tr>
                 <td><strong>Tea It Up El Paso</strong></td>
                 <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9130 3526 4194 7426</code></td>
                 <td><span class="badge completed">Completed</span></td>
-                <td><span style="color: #6b7280;">Received Offline</span></td>
               </tr>
               <tr>
                 <td><strong>Ingram Properties</strong></td>
                 <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9341 4531 5774 5001</code></td>
                 <td><span class="badge completed">Completed</span></td>
-                <td><span style="color: #6b7280;">Received Offline</span></td>
               </tr>
               <tr>
                 <td><strong>Patriot Strategy and Development, LLC</strong></td>
                 <td><code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px;">9341 4552 4997 6050</code></td>
                 <td><span class="badge completed">Completed</span></td>
-                <td><span style="color: #6b7280;">Received Offline</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 style="color: var(--color-primary); margin-top: 2rem; margin-bottom: 1rem; font-size: 1.2rem;">💳 Square (SquareUp)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Square</strong></td>
+                <td><span class="badge completed">Access Granted</span></td>
+                <td style="color: #6b7280; font-size: 0.9rem;">No API access - creating workaround for auto-download from portal</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 style="color: #eab308; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.2rem;">⏳ Pending from PDS Group</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Status</th>
+                <th>Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Google Workspace</strong></td>
+                <td><span class="badge" style="background: #fef3c7; color: #854d0e;">Waiting</span></td>
+                <td style="color: #6b7280;">PDS Group</td>
+              </tr>
+              <tr>
+                <td><strong>SmartSuite</strong></td>
+                <td><span class="badge" style="background: #fef3c7; color: #854d0e;">Waiting</span></td>
+                <td style="color: #6b7280;">PDS Group</td>
               </tr>
             </tbody>
           </table>
