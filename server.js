@@ -1034,6 +1034,113 @@ app.get('/api/admin-report', async (req, res) => {
   }
 });
 
+// Export appointments as text file
+app.get('/api/export-appointments', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT a.id, a.name, a.company_name, a.email, 
+             a.appointment_date, a.appointment_time, a.status,
+             c.name as credential_name, a.created_at
+      FROM appointments a
+      LEFT JOIN credentials c ON a.credential_id = c.id
+      ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    `);
+    
+    if (result.rows.length === 0) {
+      res.setHeader('Content-Type', 'text/plain');
+      res.send('No appointments booked yet.\n\nVisit the portal to book support calls.');
+      return;
+    }
+    
+    // Generate text report
+    let report = '';
+    report += '═══════════════════════════════════════════════════════════════\n';
+    report += '  IPS CREDENTIAL PORTAL - APPOINTMENTS REPORT\n';
+    report += '═══════════════════════════════════════════════════════════════\n';
+    report += `Generated: ${new Date().toLocaleString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    })}\n`;
+    report += `Total Appointments: ${result.rows.length}\n`;
+    
+    const upcoming = result.rows.filter(a => new Date(a.appointment_date) >= new Date());
+    const past = result.rows.filter(a => new Date(a.appointment_date) < new Date());
+    
+    report += `Upcoming: ${upcoming.length} | Past: ${past.length}\n`;
+    report += '═══════════════════════════════════════════════════════════════\n\n';
+    
+    if (upcoming.length > 0) {
+      report += '\n📅 UPCOMING APPOINTMENTS\n';
+      report += '═══════════════════════════════════════════════════════════════\n\n';
+      
+      upcoming.forEach((appt, index) => {
+        const apptDate = new Date(appt.appointment_date);
+        report += `[${index + 1}] ${apptDate.toLocaleDateString('en-US', { 
+          weekday: 'long',
+          month: 'long', 
+          day: 'numeric',
+          year: 'numeric'
+        })} at ${appt.appointment_time} PST\n`;
+        report += `${'─'.repeat(60)}\n`;
+        report += `Name: ${appt.name || 'N/A'}\n`;
+        report += `Company: ${appt.company_name || 'N/A'}\n`;
+        report += `Email: ${appt.email || 'N/A'}\n`;
+        report += `Credential: ${appt.credential_name || 'Unknown'}\n`;
+        report += `Status: ${appt.status.toUpperCase()}\n`;
+        report += `Booked: ${new Date(appt.created_at).toLocaleString('en-US')}\n`;
+        report += `\n`;
+      });
+    }
+    
+    if (past.length > 0) {
+      report += '\n📋 PAST APPOINTMENTS\n';
+      report += '═══════════════════════════════════════════════════════════════\n\n';
+      
+      past.forEach((appt, index) => {
+        const apptDate = new Date(appt.appointment_date);
+        report += `[${index + 1}] ${apptDate.toLocaleDateString('en-US', { 
+          weekday: 'long',
+          month: 'long', 
+          day: 'numeric',
+          year: 'numeric'
+        })} at ${appt.appointment_time} PST\n`;
+        report += `${'─'.repeat(60)}\n`;
+        report += `Name: ${appt.name || 'N/A'}\n`;
+        report += `Company: ${appt.company_name || 'N/A'}\n`;
+        report += `Email: ${appt.email || 'N/A'}\n`;
+        report += `Credential: ${appt.credential_name || 'Unknown'}\n`;
+        report += `Status: ${appt.status.toUpperCase()}\n`;
+        report += `\n`;
+      });
+    }
+    
+    report += '\n═══════════════════════════════════════════════════════════════\n';
+    report += '  END OF REPORT\n';
+    report += '═══════════════════════════════════════════════════════════════\n';
+    report += '\nNOTES:\n';
+    report += '• All times are in PST (Pacific Standard Time)\n';
+    report += '• Contact clients via email to confirm appointments\n';
+    report += '• For support: danny@nbrain.ai\n';
+    
+    // Set headers for file download
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="IPS_Appointments_Export_${new Date().toISOString().split('T')[0]}.txt"`);
+    res.send(report);
+    
+  } catch (error) {
+    console.error('Error exporting appointments:', error);
+    res.status(500).send(`Error exporting appointments: ${error.message}`);
+  } finally {
+    client.release();
+  }
+});
+
 // Export credentials as text file
 app.get('/api/export-credentials', async (req, res) => {
   const client = await pool.connect();
