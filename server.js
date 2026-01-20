@@ -426,6 +426,91 @@ What to Upload:
 - Account ID
 - Client ID
 - Client Secret`
+      },
+      {
+        name: 'PSD Google Credentials',
+        description: 'Google Workspace Access for PSD',
+        instructions: `Step 1: Access Google Admin Console
+Go to admin.google.com and sign in with your Google Workspace admin credentials.
+
+Step 2: Navigate to API Controls
+Click Security → API Controls → Manage Domain-wide Delegation
+Direct link: https://admin.google.com/ac/owl/domainwidedelegation
+
+Step 3: Create Service Account
+Go to Google Cloud Console: https://console.cloud.google.com
+Select or create a project
+Navigate to IAM & Admin → Service Accounts
+Click "Create Service Account"
+Name: nBrain AI Integration
+Description: Read-only access for AI Brain platform
+
+Step 4: Generate Key
+Click on the newly created service account
+Go to Keys tab → Add Key → Create new key
+Choose JSON format
+Download the JSON key file (keep this secure!)
+
+Step 5: Enable APIs
+In Google Cloud Console, go to APIs & Services → Library
+Enable the following APIs:
+- Google Drive API
+- Gmail API
+- Google Calendar API
+- Google Sheets API
+- Google Docs API
+
+Step 6: Set Up Domain-Wide Delegation
+Copy the Client ID from your service account
+Go back to Google Admin Console → Security → API Controls → Domain-wide Delegation
+Click "Add new"
+Paste the Client ID
+Add these OAuth Scopes (comma-separated):
+- https://www.googleapis.com/auth/drive.readonly
+- https://www.googleapis.com/auth/gmail.readonly
+- https://www.googleapis.com/auth/calendar.readonly
+- https://www.googleapis.com/auth/spreadsheets.readonly
+- https://www.googleapis.com/auth/documents.readonly
+
+What to Upload:
+- The downloaded JSON key file (contains all credentials)
+- List of enabled APIs
+- Confirmation of domain-wide delegation setup
+
+💡 Note: This setup is technical. If you need assistance, we can schedule a screen share to walk through it together.`
+      },
+      {
+        name: 'PSD SmartSuite Credentials',
+        description: 'SmartSuite API Access for PSD',
+        instructions: `Step 1: Log into SmartSuite
+Go to app.smartsuite.com and sign in with admin credentials.
+
+Step 2: Navigate to API Settings
+Click your profile icon (top right) → Account Settings → API Access
+Or look for "Integrations" or "Developer Settings" in the menu
+
+Step 3: Generate API Key
+Click "Generate New API Key" or "Create API Token"
+Name: nBrain AI Integration
+Permissions: Read-only access (if available, otherwise full access with read-only usage agreement)
+
+Step 4: Copy the API Key
+SmartSuite will display your API key once. Copy it immediately and save securely.
+⚠️ Important: You won't be able to see this key again. If you lose it, you'll need to generate a new one.
+
+Step 5: Note Your Account Details
+Make note of:
+- Your SmartSuite account/workspace ID (if visible)
+- Which solutions/apps we should access
+- Any specific tables or views that contain key data
+
+What to Upload:
+- API Key
+- SmartSuite account/workspace ID (if available)
+- List of solutions/apps we need access to
+- Any specific access restrictions or notes
+
+💡 Alternative: If you prefer, you can invite our technical team as a read-only user to your SmartSuite workspace instead of using API access.`
       }
     ];
 
@@ -690,7 +775,7 @@ app.get('/api/admin-report', async (req, res) => {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>IPS Credential Portal - Admin Report</title>
+        <title>Ingram Properties Credential Portal - Admin Report</title>
         <style>
           :root {
             --color-primary: #1a365d;
@@ -831,7 +916,7 @@ app.get('/api/admin-report', async (req, res) => {
       </head>
       <body>
         <div class="header">
-          <h1>📊 IPS Credential Portal - Admin Report</h1>
+          <h1>📊 Ingram Properties Credential Portal - Admin Report</h1>
           <p>Generated: ${new Date().toLocaleString('en-US', { 
             weekday: 'long', 
             year: 'numeric', 
@@ -1056,7 +1141,7 @@ app.get('/api/export-appointments', async (req, res) => {
     // Generate text report
     let report = '';
     report += '═══════════════════════════════════════════════════════════════\n';
-    report += '  IPS CREDENTIAL PORTAL - APPOINTMENTS REPORT\n';
+    report += '  INGRAM PROPERTIES CREDENTIAL PORTAL - APPOINTMENTS REPORT\n';
     report += '═══════════════════════════════════════════════════════════════\n';
     report += `Generated: ${new Date().toLocaleString('en-US', { 
       weekday: 'long', 
@@ -1130,7 +1215,7 @@ app.get('/api/export-appointments', async (req, res) => {
     
     // Set headers for file download
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="IPS_Appointments_Export_${new Date().toISOString().split('T')[0]}.txt"`);
+    res.setHeader('Content-Disposition', `attachment; filename="Ingram_Properties_Appointments_Export_${new Date().toISOString().split('T')[0]}.txt"`);
     res.send(report);
     
   } catch (error) {
@@ -1162,7 +1247,7 @@ app.get('/api/export-credentials', async (req, res) => {
     // Generate text report
     let report = '';
     report += '═══════════════════════════════════════════════════════════════\n';
-    report += '  IPS CREDENTIAL PORTAL - SUBMITTED CREDENTIALS REPORT\n';
+    report += '  INGRAM PROPERTIES CREDENTIAL PORTAL - SUBMITTED CREDENTIALS REPORT\n';
     report += '═══════════════════════════════════════════════════════════════\n';
     report += `Generated: ${new Date().toLocaleString('en-US', { 
       weekday: 'long', 
@@ -1212,7 +1297,7 @@ app.get('/api/export-credentials', async (req, res) => {
     
     // Set headers for file download
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="IPS_Credentials_Export_${new Date().toISOString().split('T')[0]}.txt"`);
+    res.setHeader('Content-Disposition', `attachment; filename="Ingram_Properties_Credentials_Export_${new Date().toISOString().split('T')[0]}.txt"`);
     res.send(report);
     
   } catch (error) {
